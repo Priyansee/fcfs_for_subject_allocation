@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Slot Selection</title>
+    <style>
+        body { font-family: sans-serif; margin: 2rem; }
+        .slot-container { margin-bottom: 2rem; padding: 1rem; border: 1px solid #ccc; border-radius: 4px; }
+        .slot-title { font-weight: bold; margin-bottom: 0.5rem; }
+        .course-list { margin: 0; padding-left: 1.5rem; }
+        .submit-btn { padding: 0.5rem 1rem; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; }
+        .submit-btn:hover { background-color: #0056b3; }
+        .form-group { margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    <h1>Select a Course Slot</h1>
+
+    <div th:if="${enrolledSlot != null}" style="background-color: #d4edda; color: #155724; padding: 1rem; border-radius: 4px; margin-bottom: 2rem;">
+        <strong>Information:</strong> You are already enrolled in <strong>Slot <span th:text="${enrolledSlot}"></span></strong>.
+    </div>
+
+    <div th:if="${enrolledSlot == null}" style="background-color: #fff3cd; color: #856404; padding: 1rem; border-radius: 4px; margin-bottom: 2rem;">
+        <strong>Note:</strong> You have not selected any slot yet.
+    </div>
+    
+    <form th:action="@{/registration/allocate}" method="post">
+        
+        <div class="form-group">
+            <label for="studentId"><strong>Student ID:</strong></label>
+            <input type="number" id="studentId" name="studentId" th:value="${currentStudentId}" readonly />
+        </div>
+
+        <div th:if="${slots == null or slots.empty}">
+            <p>No slots available right now.</p>
+        </div>
+
+        <div th:each="slotItem : ${slots}" class="slot-container" th:style="${enrolledSlot == (slotItem.key + '') ? 'border: 2px solid #28a745; background-color: #f8fff9;' : ''}">
+            <div class="slot-title">
+                <input type="radio" th:id="${'slot_' + slotItem.key}" name="slot" th:value="${slotItem.key}" 
+                       th:checked="${enrolledSlot == (slotItem.key + '')}"
+                       th:disabled="${enrolledSlot != null}"
+                       required />
+                <label th:for="${'slot_' + slotItem.key}">
+                    Slot <span th:text="${slotItem.key}"></span>
+                    <span th:if="${enrolledSlot == (slotItem.key + '')}" style="color: #28a745; font-size: 0.8rem; margin-left: 10px;">(Your Current Slot)</span>
+                </label>
+            </div>
+            <ul class="course-list">
+                <li th:each="course : ${slotItem.value}" 
+                    th:text="${course.courseCode + ' - ' + course.courseName}">
+                </li>
+            </ul>
+        </div>
+        
+        <div th:if="${slots != null and !slots.empty and enrolledSlot == null}">
+            <button type="submit" class="submit-btn">Submit Allocation</button>
+        </div>
+    </form>
+</body>
+</html>
