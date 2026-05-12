@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Defense: FCFS Subject Allocation System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #ffffff;
+            --text: #1a1a1a;
+            --text-dim: #555555;
+            --primary: #000000;
+            --secondary: #e5e5e5;
+            --accent: #2563eb;
+            --danger: #dc2626;
+            --success: #16a34a;
+            --border: #d1d1d1;
+            --card-bg: #f9f9f9;
+        }
+
+        [data-theme='dark'] {
+            --bg: #0f172a;
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
+            --primary: #ffffff;
+            --secondary: #1e293b;
+            --border: #334155;
+            --card-bg: #1e293b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .presentation-frame {
+            width: 95vw;
+            height: 90vh;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .slide-header {
+            padding: 20px 40px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .slide-header h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .slide-container {
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 40px 60px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slide.active { opacity: 1; pointer-events: all; transform: translateX(0); }
+        .slide.prev { transform: translateX(-20px); }
+        .slide.next { transform: translateX(20px); }
+
+        h1 { font-size: 3rem; font-weight: 800; line-height: 1.1; margin-bottom: 20px; }
+        h3 { font-size: 1.8rem; font-weight: 700; margin-bottom: 15px; color: var(--primary); }
+
+        .slide-content { flex-grow: 1; overflow-y: auto; }
+
+        .explanation {
+            margin-top: 15px;
+            font-size: 0.95rem;
+            color: var(--text-dim);
+            line-height: 1.6;
+            border-top: 1px solid var(--border);
+            padding-top: 15px;
+        }
+
+        /* Visual Components */
+        .card-grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin: 20px 0; }
+        .card { background: var(--card-bg); border: 1px solid var(--border); padding: 20px; border-radius: 4px; position: relative; }
+        .card h4 { margin-bottom: 10px; font-weight: 700; font-size: 1.1rem; color: var(--primary); }
+
+        .timeline-container { position: relative; margin: 40px 0; }
+        .transaction-bar { height: 40px; border-radius: 4px; margin-bottom: 10px; position: relative; border: 1px solid var(--border); }
+        .t1-bar { background: rgba(37, 99, 235, 0.1); border-left: 4px solid var(--accent); }
+        .t2-bar { background: rgba(220, 38, 38, 0.1); border-left: 4px solid var(--danger); }
+
+        .arch-diagram { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 20px 0; }
+        .arch-box { border: 2px solid var(--primary); padding: 12px 30px; width: 300px; text-align: center; font-weight: 700; background: var(--bg); }
+        .arrow-v { height: 30px; width: 2px; background: var(--primary); position: relative; }
+        .arrow-v::after { content: ''; position: absolute; bottom: -5px; left: -4px; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 8px solid var(--primary); }
+
+        .db-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; margin-top: 20px; }
+        .db-table { border: 1px solid var(--primary); font-size: 0.8rem; }
+        .db-header { background: var(--primary); color: var(--bg); padding: 5px; text-align: center; font-weight: 700; }
+        .db-row { padding: 4px 8px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+        .pk { color: #854d0e; font-weight: 700; }
+        .fk { color: var(--accent); }
+
+        .code-block { background: #000; color: #fff; padding: 15px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; margin: 10px 0; overflow-x: auto; white-space: pre; }
+
+        .phase-step { border: 2px solid var(--primary); padding: 15px; border-radius: 50%; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: 700; font-size: 0.8rem; }
+
+        /* Progress & Controls */
+        .presentation-footer { padding: 15px 40px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .progress-bar-container { flex-grow: 1; margin: 0 40px; height: 4px; background: var(--secondary); border-radius: 2px; }
+        .progress-bar { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s; }
+        .btn { padding: 8px 20px; border: 1px solid var(--primary); background: transparent; color: var(--primary); cursor: pointer; font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; transition: 0.2s; }
+        .btn:hover:not(:disabled) { background: var(--primary); color: var(--bg); }
+        .btn:disabled { opacity: 0.2; cursor: not-allowed; }
+
+        .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        .comp-box { border: 1px solid var(--border); padding: 20px; border-radius: 4px; position: relative; }
+        .comp-bad { border-top: 4px solid var(--danger); }
+        .comp-good { border-top: 4px solid var(--success); }
+
+        .badge { display: inline-block; padding: 2px 8px; font-size: 0.7rem; font-weight: 700; border-radius: 10px; margin-right: 5px; background: var(--secondary); vertical-align: middle; }
+
+        .metric-card { text-align: center; padding: 20px; border: 1px solid var(--border); }
+        .metric-value { font-size: 2.5rem; font-weight: 800; margin-bottom: 5px; }
+        .metric-label { font-size: 0.8rem; text-transform: uppercase; color: var(--text-dim); letter-spacing: 1px; }
+
+        /* List Styling */
+        .motivation-list { list-style: none; }
+        .motivation-item { margin-bottom: 25px; border-left: 4px solid var(--accent); padding-left: 20px; }
+        .motivation-item h4 { margin-bottom: 5px; color: var(--primary); font-size: 1.2rem; }
+        
+        .objective-card { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 15px; }
+        .obj-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #fff; font-size: 1.2rem; }
+
+        /* Tech Stack Visual */
+        .tech-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 20px; }
+        .tech-card { padding: 15px; border: 1px solid var(--border); text-align: center; background: var(--card-bg); }
+        .tech-card i { font-size: 2rem; margin-bottom: 10px; color: var(--accent); }
+        .tech-card div { font-weight: 700; font-size: 0.9rem; }
+
+    </style>
+</head>
+<body>
+
+    <div class="presentation-frame">
+        <div class="slide-header">
+            <h2>M.Tech Minor Project Presentation</h2>
+            <button id="theme-toggle" class="btn" style="border:none; font-size: 1.2rem; padding: 0 10px;">🌓</button>
+        </div>
+
+        <div class="slide-container">
+            <!-- 1. Title Slide -->
+            <div class="slide active">
+                <div class="slide-content" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; height: 100%;">
+                    <div style="margin-bottom: 20px;">
+                        <img src="dau_logo.png" alt="DAU Logo" style="height: 100px; filter: drop-shadow(0 0 10px rgba(0,0,0,0.1));" onerror="this.src='https://via.placeholder.com/150x150?text=DAU+LOGO'">
+                    </div>
+                    <h1>Implementation of FCFS Algorithm for Subject Allocation</h1>
+                    <p style="font-size: 1.2rem; color: var(--text-dim); max-width: 700px;">A High-Concurrency Concurrency-Safe Registration System using Pessimistic Locking</p>
+                    <div style="margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; text-align: left;">
+                        <div>
+                            <p style="font-size: 0.8rem; color: var(--text-dim);">PRESENTED BY</p>
+                            <p style="font-weight: 700; font-size: 1.1rem;">Priyansee Mukeshkumar Soni</p>
+                            <p>ID: 202511011</p>
+                        </div>
+                        <div>
+                            <p style="font-size: 0.8rem; color: var(--text-dim);">SUPERVISED BY</p>
+                            <p style="font-weight: 700; font-size: 1.1rem;">Prof. P M Jat</p>
+                            <p>M.Tech ICT, DAU</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Presentation Outline -->
+            <div class="slide">
+                <h3>Presentation Outline</h3>
+                <div class="slide-content">
+                    <div class="card-grid" style="grid-template-columns: repeat(2, 1fr);">
+                        <div style="line-height: 2.2;">
+                            • Problem Statement: The Race Condition<br>
+                            • Barging & Fairness Violation<br>
+                            • Motivation: Why this Matters<br>
+                            • Design Objectives<br>
+                            • Technology Stack<br>
+                            • System Architecture Overview<br>
+                            • Architecture Explanation
+                        </div>
+                        <div style="line-height: 2.2;">
+                            • Database Design & Schema<br>
+                            • The Three-Phase FCFS Algorithm<br>
+                            • Phase 0: The Wait-Free Doorway<br>
+                            • Phase 1 & 2: Locking & Commit<br>
+                            • Concurrency Handling Visualization<br>
+                            • Deadlock Prevention Strategy<br>
+                            • Case Study: Hibernate Cache Bug<br>
+                            • Results & Key Decisions
+                        </div>
+                    </div>
+                </div>
+                <p class="explanation">This session provides a technical walkthrough from problem identification to the implementation of a mathematically safe allocation engine.</p>
+            </div>
+
+            <!-- 3. Problem Statement -->
+            <div class="slide">
+                <h3>The Problem: Transactional Race Conditions</h3>
+                <div class="slide-content">
+                    <p>Concurrent read-modify-write operations on un-synchronized resources lead to "Lost Updates".</p>
+                    <div class="timeline-container">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-dim); margin-bottom: 5px;">
+                            <span>t=0ms</span><span>t=50ms</span><span>t=100ms</span><span>t=150ms</span><span>t=200ms</span>
+                        </div>
+                        <div class="transaction-bar t1-bar">
+                            <div style="position: absolute; left: 10%; top: 10px;">T1: READ (Seats=1)</div>
+                            <div style="position: absolute; left: 70%; top: 10px;">T1: WRITE (Seats=0)</div>
+                        </div>
+                        <div class="transaction-bar t2-bar" style="margin-left: 20%;">
+                            <div style="position: absolute; left: 10%; top: 10px;">T2: READ (Seats=1)</div>
+                            <div style="position: absolute; left: 70%; top: 10px;">T2: WRITE (Seats=0)</div>
+                        </div>
+                        <div style="margin-top: 10px; padding: 10px; background: rgba(220, 38, 38, 0.05); border: 1px dashed var(--danger); text-align: center; font-weight: 700; color: var(--danger);">
+                            ⚠ RESULT: Two students allocated to one seat (Overbooking)
+                        </div>
+                        <ul style="margin-top: 20px; font-size: 0.9rem; color: var(--text-dim); list-style-type: square; padding-left: 20px;">
+                            <li><strong>Lost Update Phenomenon:</strong> Occurs when concurrent transactions read identical state, leading to overwriting of allocation counts.</li>
+                            <li><strong>Integrity Breach:</strong> Without synchronization, the database fails to enforce the physical limit of available resources.</li>
+                        </ul>
+                    </div>
+                </div>
+                <p class="explanation">When T1 and T2 read the same state simultaneously, T2's write overwrites T1's, effectively "losing" an update and breaking data integrity.</p>
+            </div>
+
+            <!-- 4. Barging Problem -->
+            <div class="slide">
+                <h3>Barging & Fairness Violation</h3>
+                <div class="slide-content">
+                    <p>Optimistic locking with retries destroys the "First-Come-First-Serve" requirement.</p>
+                    <div style="display: flex; justify-content: center; align-items: center; gap: 20px; margin: 30px 0;">
+                        <div style="text-align: center; flex: 1;">
+                            <div style="border: 2px solid var(--primary); padding: 10px; margin-bottom: 5px;">S1 (Clicks @ t=0)</div>
+                            <div style="color: var(--danger); font-size: 0.7rem;">Collides & Retries</div>
+                        </div>
+                        <div style="font-size: 2rem;">➔</div>
+                        <div style="text-align: center; flex: 1;">
+                            <div style="border: 2px solid var(--accent); padding: 10px; margin-bottom: 5px; background: var(--secondary);">S2 (Clicks @ t=50)</div>
+                            <div style="color: var(--success); font-size: 0.7rem;">Succeeds on 1st try</div>
+                        </div>
+                        <div style="font-size: 2rem;">➔</div>
+                        <div style="text-align: center; flex: 1;">
+                            <div style="border: 2px solid var(--primary); padding: 10px; opacity: 0.5;">S1 (Retry @ t=100)</div>
+                            <div style="color: var(--danger); font-size: 0.7rem;">Slot Full!</div>
+                        </div>
+                    </div>
+                    <div class="card" style="border-left: 4px solid var(--danger); text-align: center; font-weight: 700;">
+                        "FCFS fairness violated: Later arrivals overtake earlier ones"
+                    </div>
+                    <ul style="margin-top: 25px; font-size: 0.9rem; color: var(--text-dim); list-style-type: square; padding-left: 20px;">
+                        <li><strong>The Barging Problem:</strong> Later requests can acquire locks while earlier requests are in a "back-off" or retry state.</li>
+                        <li><strong>Fairness Guarantee:</strong> Strict FCFS ensures that temporal priority is the only factor in resource acquisition.</li>
+                    </ul>
+                </div>
+                <p class="explanation">"Barging" occurs when a late-comer acquires a lock while an earlier request is in a "back-off" period following a collision.</p>
+            </div>
+
+            <!-- 6. Design Objectives -->
+            <div class="slide">
+                <h3>Design Objectives</h3>
+                <div class="slide-content">
+                    <div class="card-grid" style="grid-template-columns: 1fr;">
+                        <div class="objective-card">
+                            <div class="obj-icon" style="background: var(--accent);"><i class="fas fa-clock"></i></div>
+                            <div>
+                                <h4 style="margin:0;">FCFS Fairness</h4>
+                                <p style="font-size:0.85rem; color:var(--text-dim);">Requests that arrive earlier must be served before later ones — no thread barging allowed.</p>
+                            </div>
+                        </div>
+                        <div class="objective-card">
+                            <div class="obj-icon" style="background: var(--warning);"><i class="fas fa-link-slash"></i></div>
+                            <div>
+                                <h4 style="margin:0;">Deadlock Freedom</h4>
+                                <p style="font-size:0.85rem; color:var(--text-dim);">Concurrent transactions must never stall each other in circular lock waits.</p>
+                            </div>
+                        </div>
+                        <div class="objective-card">
+                            <div class="obj-icon" style="background: var(--primary);"><i class="fas fa-atom"></i></div>
+                            <div>
+                                <h4 style="margin:0;">Atomicity</h4>
+                                <p style="font-size:0.85rem; color:var(--text-dim);">A student is enrolled in all courses within a slot, or none — no partial allocations possible.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p class="explanation">These objectives ensure that the system is both concurrency-safe and operationally reliable.</p>
+            </div>
+
+            <!-- 7. Technology Stack -->
+            <div class="slide">
+                <h3>Technology Stack</h3>
+                <div class="slide-content">
+                    <div class="tech-grid">
+                        <div class="tech-card"><i class="fab fa-java"></i><div>Java 21 (LTS)</div></div>
+                        <div class="tech-card"><i class="fas fa-leaf"></i><div>Spring Boot 3.x</div></div>
+                        <div class="tech-card"><i class="fas fa-database"></i><div>PostgreSQL 16</div></div>
+                        <div class="tech-card"><i class="fas fa-microchip"></i><div>Hibernate 6 / JPA</div></div>
+                        <div class="tech-card"><i class="fas fa-network-wired"></i><div>HikariCP</div></div>
+                        <div class="tech-card"><i class="fas fa-code"></i><div>Thymeleaf / HTML5</div></div>
+                        <div class="tech-card"><i class="fas fa-box-open"></i><div>Maven</div></div>
+                        <div class="tech-card"><i class="fas fa-server"></i><div>Embedded Tomcat</div></div>
+                    </div>
+                </div>
+                <p class="explanation">Leveraging modern, enterprise-grade frameworks to ensure high availability and robust transactional control.</p>
+            </div>
+
+            <!-- 8. System Architecture Overview -->
+            <div class="slide">
+                <h3>System Architecture – Overview</h3>
+                <div class="slide-content">
+                    <div class="arch-diagram">
+                        <div class="arch-box">Browser (Thymeleaf / CSS)</div>
+                        <div class="arrow-v"></div>
+                        <div class="arch-box" style="border-color: var(--accent);">Web Layer: RegistrationController</div>
+                        <div class="arrow-v"></div>
+                        <div class="arch-box" style="border-color: var(--accent);">Service Layer: AllocationService (@Transactional)</div>
+                        <div class="arrow-v"></div>
+                        <div class="arch-box" style="border-color: var(--accent);">Data Layer: Spring Data JPA (Hibernate)</div>
+                        <div class="arrow-v"></div>
+                        <div class="arch-box" style="border-left: 8px solid var(--primary);">Database: PostgreSQL</div>
+                    </div>
+                </div>
+                <p class="explanation">A clean MVC-Service-Repository separation allows the concurrency logic to be isolated within the Service layer.</p>
+            </div>
+
+            <!-- 9. Full Stack Layered Interaction -->
+            <div class="slide">
+                <h3>Full Stack – Layered Interaction</h3>
+                <div class="slide-content">
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 8px; font-size: 0.6rem;">
+                        
+                        <!-- Layer 1 -->
+                        <div class="card" style="padding: 8px; border-left: 3px solid #e34f26;">
+                            <strong>1. Client Layer (Thymeleaf / HTML5)</strong>
+                            <p>Captures user intent and submits the registration form via POST.</p>
+                            <code style="background: #f4f4f4; display: block; margin-top: 4px;">&lt;form th:action="@{/register}" method="post"&gt; ... &lt;/form&gt;</code>
+                        </div>
+
+                        <!-- Layer 2 -->
+                        <div class="card" style="padding: 8px; border-left: 3px solid var(--accent);">
+                            <strong>2. Web Layer (RegistrationController.java)</strong>
+                            <p>Maps the HTTP request to the internal system logic and manages redirection.</p>
+                            <code style="background: #f4f4f4; display: block; margin-top: 4px;">@PostMapping("/register") -> allocationService.allocateSlot(sid, slot)</code>
+                        </div>
+
+                        <!-- Layer 3 -->
+                        <div class="card" style="padding: 8px; border-left: 3px solid var(--primary);">
+                            <strong>3. Service Layer (AllocationService.java)</strong>
+                            <p>Enforces the 3-phase FCFS algorithm and manages Transaction boundaries.</p>
+                            <code style="background: #f4f4f4; display: block; margin-top: 4px;">@Transactional -> 2PL (Grow: Locking | Shrink: Committing)</code>
+                        </div>
+
+                        <!-- Layer 4 -->
+                        <div class="card" style="padding: 8px; border-left: 3px solid #6db33f;">
+                            <strong>4. Persistence Layer (Spring Data JPA / Hibernate)</strong>
+                            <p>Translates Java entities into optimized SQL with Pessimistic Locking hints.</p>
+                            <code style="background: #f4f4f4; display: block; margin-top: 4px;">@Lock(PESSIMISTIC_WRITE) -> findTcafByIdWithLock(id)</code>
+                        </div>
+
+                        <!-- Layer 5 -->
+                        <div class="card" style="padding: 8px; border-left: 3px solid #336791;">
+                            <strong>5. Database Layer (PostgreSQL 16)</strong>
+                            <p>Physically serializes concurrent threads using Row-Level Locks and FIFO queues.</p>
+                            <code style="background: #f4f4f4; display: block; margin-top: 4px;">SELECT * FROM tcaf WHERE id = ? FOR NO KEY UPDATE;</code>
+                        </div>
+
+                    </div>
+                </div>
+                <p class="explanation" style="font-size: 0.75rem; margin-top: 10px;">A vertical slice showing how a user click becomes a hardware-level serialized resource access.</p>
+            </div>
+
+            <!-- 10. Database Schema -->
+            <div class="slide">
+                <h3>Database Design – Full Schema</h3>
+                <div class="slide-content">
+                    <div class="db-grid">
+                        <div class="db-table">
+                            <div class="db-header">courses</div>
+                            <div class="db-row"><span class="pk">crsid (PK)</span><span>int8</span></div>
+                            <div class="db-row"><span>crsname</span><span>varchar</span></div>
+                        </div>
+                        <div class="db-table">
+                            <div class="db-header">termcourses</div>
+                            <div class="db-header" style="background: var(--accent); font-size: 0.6rem;">Slot Definitions</div>
+                            <div class="db-row"><span class="pk">tcrid (PK)</span><span>int8</span></div>
+                            <div class="db-row"><span class="fk">crsid (FK)</span><span>int8</span></div>
+                        </div>
+                        <div class="db-table" style="border: 2px solid var(--danger);">
+                            <div class="db-header" style="background: var(--danger);">termcourseavailablefor</div>
+                            <div class="db-header" style="background: var(--bg); color: var(--danger); font-size: 0.6rem;">LOCKING TARGET</div>
+                            <div class="db-row"><span class="pk">tcaid (PK)</span><span>int8</span></div>
+                            <div class="db-row"><span class="fk">tcrid (FK)</span><span>int8</span></div>
+                            <div class="db-row"><span style="font-weight: 700;">tca_seats</span><span>int4</span></div>
+                            <div class="db-row"><span style="font-weight: 700;">tca_booked</span><span>int4</span></div>
+                        </div>
+                        <div class="db-table">
+                            <div class="db-header">studentregistration</div>
+                            <div class="db-row"><span class="pk">srgid (PK)</span><span>int8</span></div>
+                            <div class="db-row"><span>srgstdid</span><span>int8</span></div>
+                        </div>
+                        <div class="db-table">
+                            <div class="db-header">studentregistrationcourses</div>
+                            <div class="db-row"><span class="pk">srcid (PK)</span><span>int8</span></div>
+                            <div class="db-row"><span class="fk">srcsrgid (FK)</span><span>int8</span></div>
+                            <div class="db-row"><span class="fk">srctcrid (FK)</span><span>int8</span></div>
+                        </div>
+                    </div>
+                </div>
+                <p class="explanation">The <span style="color: var(--danger); font-weight: 700;">TCAF</span> table is the central point of contention. Row-level locks here synchronize the entire allocation process.</p>
+            </div>
+
+            <!-- 11. FCFS Algorithm Overview -->
+            <div class="slide">
+                <h3>FCFS Algorithm – High-Level Flow</h3>
+                <div class="slide-content">
+                    <div style="display: flex; justify-content: space-around; align-items: center; height: 100%; margin-top: 20px;">
+                        <div style="text-align: center;">
+                            <div class="phase-step">1. VALIDATE<br>(Phase 0)</div>
+                            <div style="font-size: 0.7rem; margin-top: 10px;">Wait-Free Doorway</div>
+                        </div>
+                        <div style="font-size: 2rem;">➔</div>
+                        <div style="text-align: center;">
+                            <div class="phase-step" style="border-color: var(--accent);">2. LOCK<br>(Phase 1)</div>
+                            <div style="font-size: 0.7rem; margin-top: 10px;">Growing Phase</div>
+                        </div>
+                        <div style="font-size: 2rem;">➔</div>
+                        <div style="text-align: center;">
+                            <div class="phase-step" style="border-color: var(--success);">3. COMMIT<br>(Phase 2)</div>
+                            <div style="font-size: 0.7rem; margin-top: 10px;">Modify Phase</div>
+                        </div>
+                    </div>
+                </div>
+                <p class="explanation">The algorithm separates "Resource Discovery" from "Resource Acquisition" to ensure a clean, deadlock-free locking flow.</p>
+            </div>
+
+            <!-- 12. Formal Algorithm -->
+            <div class="slide">
+                <h3>Formal Algorithm: Concurrency-Safe FCFS Allocation</h3>
+                <div class="slide-content">
+                    <div class="code-block" style="font-size: 0.75rem; line-height: 1.4; background: #1e1e1e; color: #d4d4d4;">
+<strong>Goal:</strong> Guarantee Atomic Slot Allocation and Zero Overbooking under High Contention.
+<strong>Input:</strong> student_id, slot_id
+<strong>Output:</strong> Success or Exception
+
+<strong>Step 1: The Wait-Free Doorway (Discovery)</strong>
+1. <strong>START TRANSACTION</strong> (Spring @Transactional)
+2. <strong>FETCH</strong> all tcaid (Primary Keys) from <strong>ec2.termcourseavailablefor</strong> where the slot matches.
+3. <strong>VALIDATE</strong> student eligibility:
+   * Check <strong>ec2.studentregistrations</strong> to ensure student exists.
+   * <strong>IF</strong> student already has records in <strong>ec2.studentregistrationcourses</strong> 
+     <strong>THEN</strong> ROLLBACK & THROW AlreadyEnrolledException.
+
+<strong>Step 2: Resource Serialization (The Growing Phase)</strong>
+4. <strong>SORT</strong> the list of tcaid in ascending order.
+   * <em>Mechanism: Prevents AB-BA Deadlocks.</em>
+5. <strong>ACQUIRE PESSIMISTIC LOCKS:</strong>
+   * <strong>FOR EACH</strong> tcaid in the sorted list:
+     * Execute: SELECT * FROM ec2.termcourseavailablefor WHERE tcaid = ? FOR NO KEY UPDATE
+     * <em>Result: Parallel threads requesting the same courses are serialized into a FIFO queue.</em>
+
+<strong>Step 3: Atomic Consistency Check & Commit</strong>
+6. <strong>VERIFY CAPACITY:</strong>
+   * <strong>FOR EACH</strong> locked row in <strong>ec2.termcourseavailablefor</strong>:
+     * <strong>IF</strong> tca_booked >= tca_seats 
+       <strong>THEN</strong> ROLLBACK & THROW RuntimeException("Slot Full").
+7. <strong>EXECUTE PERSISTENCE:</strong>
+   * <strong>UPDATE</strong> tca_booked = tca_booked + 1 in <strong>ec2.termcourseavailablefor</strong>.
+   * <strong>INSERT</strong> student-subject mapping into <strong>ec2.studentregistrationcourses</strong>.
+8. <strong>COMMIT TRANSACTION</strong>
+   * <em>Result: All locks are released; seats are officially allocated.</em>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 13. Sequence Diagram -->
+            <div class="slide">
+                <h3>System Sequence Diagram</h3>
+                <div class="slide-content">
+                    <div style="background: white; padding: 5px; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-height: 450px; overflow: hidden;">
+                        <img src="sequence_diagram.png" alt="System Sequence Diagram" style="width: auto; height: 100%; max-height: 440px; object-fit: contain;">
+                    </div>
+                </div>
+                <p class="explanation">This diagram traces the lifecycle of a request, highlighting how concurrent threads are serialized at the database level.</p>
+            </div>
+
+            <!-- 14. Phase 0 -->
+            <div class="slide">
+                <h3>Phase 0: The Wait-Free Doorway (Discovery)</h3>
+                <div class="slide-content">
+                    <p>Filename: <code>AllocationService.java</code></p>
+                    <div class="code-block">
+// 1. Fetch identifiers only (Bypasses Hibernate L1 Cache)
+List&lt;Long&gt; tcaIdsToLock = termCourseAvailableForRepository.findTcaIdsBySlot(slotId);
+if (tcaIdsToLock.isEmpty()) {
+    throw new SlotNotFoundException(slot);
+}
+
+// 2. Validate Student Eligibility
+StudentRegistration registration = studentRegistrationRepository.findFirstBySrgstdidOrderBySrgidDesc(studentId);
+if (registration == null) {
+    throw new RuntimeException("Student registration record not found");
+}
+
+// 3. FCFS Pre-check: Only 1 slot per student
+long existingRegistrations = studentRegistrationCoursesRepository.countBySrcsrgid(registration.getSrgid());
+if (existingRegistrations > 0) {
+    throw new AlreadyEnrolledException();
+}
+                    </div>
+                    <div class="card" style="border-left: 4px solid var(--accent);">
+                        <p style="font-size: 0.9rem;"><strong>Strategy:</strong> Discovery phase is wait-free. We identify the target rows without blocking other students, ensuring system responsiveness during the initial request handling.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 15. Phase 1 -->
+            <div class="slide">
+                <h3>Phase 1: Growing Phase (Acquiring Locks)</h3>
+                <div class="slide-content">
+                    <p>Filename: <code>AllocationService.java</code></p>
+                    <div class="code-block">
+// 1. Two-Phase Locking (2PL): Sort to prevent deadlock
+Collections.sort(tcaIdsToLock);
+
+// 2. Acquire Pessimistic Locks (FOR NO KEY UPDATE)
+List&lt;TermCourseAvailableFor&gt; lockedTcafs = new ArrayList&lt;&gt;();
+for (Long tcaid : tcaIdsToLock) {
+    // This executes the database-level lock and queueing
+    TermCourseAvailableFor lockedTca = termCourseAvailableForRepository.findTcafByIdWithLock(tcaid);
+    lockedTcafs.add(lockedTca);
+}
+                    </div>
+                    <div class="card" style="border-left: 4px solid var(--warning);">
+                        <p style="font-size: 0.9rem;"><strong>Strategy:</strong> Serialization. By sorting IDs and using <code>FOR NO KEY UPDATE</code>, we force concurrent requests for the same subjects into a strict FIFO queue in the database kernel.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 16. Phase 2 -->
+            <div class="slide">
+                <h3>Phase 2: Atomic Commitment (Persistence)</h3>
+                <div class="slide-content">
+                    <p>Filename: <code>AllocationService.java</code></p>
+                    <div class="code-block">
+// 1. Final Capacity Check (Safe after locking)
+for (TermCourseAvailableFor lockedTca : lockedTcafs) {
+    if (lockedTca.getTcaBooked() >= lockedTca.getTcaSeats()) {
+        throw new RuntimeException("Slot Full: No seats remaining for subject...");
+    }
+}
+
+// 2. Atomic Update & Enrollment
+for (TermCourseAvailableFor lockedTca : lockedTcafs) {
+    lockedTca.setTcaBooked(lockedTca.getTcaBooked() + 1);
+    termCourseAvailableForRepository.save(lockedTca);
+
+    StudentRegistrationCourses enrollment = new StudentRegistrationCourses();
+    enrollment.setSrcsrgid(srgid);
+    enrollment.setSrctcrid(lockedTca.getTermCourse().getTcrid());
+    studentRegistrationCoursesRepository.save(enrollment);
+}
+                    </div>
+                </div>
+                <p class="explanation">The entire method is <code>@Transactional</code>. If any part of Phase 2 fails (e.g. seat full), the database rolls back all changes, ensuring 100% data integrity.</p>
+                <ul style="font-size: 0.8rem; color: var(--text-dim); margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Atomic Commitment:</strong> Guarantees all-or-nothing allocation for the entire slot.</li>
+                    <li><strong>Auto-Rollback:</strong> Any runtime exception triggers an instant database revert of booked counts.</li>
+                </ul>
+            </div>
+
+            <!-- 14. Concurrency Handling -->
+            <div class="slide">
+                <h3>Concurrency: Holder vs. Waiters</h3>
+                <div class="slide-content">
+                    <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 20px;">
+                        <div class="card" style="border-left: 10px solid var(--success); display: flex; justify-content: space-between; align-items: center;">
+                            <div><strong>Transaction A</strong></div>
+                            <div class="badge" style="background: var(--success); color: #fff;">LOCK HOLDER</div>
+                            <div style="font-size: 0.8rem;">Status: Executing logic</div>
+                        </div>
+                        <div class="card" style="border-left: 10px solid var(--warning); display: flex; justify-content: space-between; align-items: center;">
+                            <div><strong>Transaction B</strong></div>
+                            <div class="badge" style="background: var(--warning);">WAITING</div>
+                            <div style="font-size: 0.8rem; font-style: italic;">Status: Blocked @ SELECT FOR UPDATE</div>
+                        </div>
+                        <div class="card" style="border-left: 10px solid var(--danger); display: flex; justify-content: space-between; align-items: center;">
+                            <div><strong>Transaction C</strong></div>
+                            <div class="badge" style="background: var(--danger); color: #fff;">WAITING</div>
+                            <div style="font-size: 0.8rem; font-style: italic;">Status: Blocked @ SELECT FOR UPDATE</div>
+                        </div>
+                    </div>
+                </div>
+                <p class="explanation">Threads B and C wait in the database kernel queue until Transaction A commits, effectively serializing the thundering herd.</p>
+                <ul style="font-size: 0.8rem; color: var(--text-dim); margin-top: 10px; padding-left: 20px;">
+                    <li><strong>FIFO Queueing:</strong> PostgreSQL manages the wait-order based on transaction arrival time.</li>
+                    <li><strong>Lock Persistence:</strong> The <code>FOR NO KEY UPDATE</code> lock is held until the final <code>COMMIT</code>.</li>
+                </ul>
+            </div>
+
+            <!-- 18. Deadlock Prevention -->
+            <div class="slide">
+                <h3>Deadlock Prevention: Global Ordering</h3>
+                <div class="slide-content">
+                    <div class="comparison">
+                        <div class="comp-box comp-bad">
+                            <h4 class="danger">X Circular Wait (Risk)</h4>
+                            <p style="font-size: 0.8rem;">T1 locks A, waits for B.<br>T2 locks B, waits for A.<br>→ <strong>DEADLOCK</strong></p>
+                        </div>
+                        <div class="comp-box comp-good">
+                            <h4 class="success">✓ Global Ordering (Fix)</h4>
+                            <p style="font-size: 0.8rem;">Everyone sorts: <code>A &lt; B</code><br>T1 locks A, then B.<br>T2 waits for A.<br>→ <strong>SAFE</strong></p>
+                        </div>
+                    </div>
+                </div>
+                <p class="explanation">No thread can hold a higher ID and wait for a lower one, making deadlock structurally impossible.</p>
+                <ul style="font-size: 0.8rem; color: var(--text-dim); margin-top: 10px; padding-left: 20px;">
+                    <li><strong>Global Lock Ordering:</strong> Sorting resource IDs (TCA_IDs) eliminates the "Circular Wait" condition.</li>
+                    <li><strong>Structural Prevention:</strong> Ensures deterministic acquisition order, removing the need for costly deadlock detection.</li>
+                </ul>
+            </div>
+
+            <!-- 19. Terminal Evidence -->
+            <div class="slide">
+                <h3>Technical Validation: Terminal Logs</h3>
+                <div class="slide-content">
+                    <p>Evidence of Pessimistic Locking and Transactional Queuing in the IDE terminal.</p>
+                    <div style="background: #000; border: 1px solid var(--border); padding: 5px; border-radius: 8px; height: auto; max-height: 400px; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
+                        <img src="terminal_results.png" alt="Terminal Logs" style="width: 100%; height: auto; object-fit: contain; border-radius: 4px;">
+                    </div>
+                    <div class="explanation">
+                        The log shows the <strong>1,000-thread</strong> benchmark finishing with exactly <strong>20 successes</strong>. The presence of <code>FOR NO KEY UPDATE</code> confirms that the database handled the queuing.
+                    </div>
+                </div>
+            </div>
+
+            <!-- 20. Testing & Results -->
+            <div class="slide">
+                <h3>Empirical Results & Testing</h3>
+                <div class="slide-content">
+                    <div class="card-grid">
+                        <div class="metric-card" style="border-color: var(--success);">
+                            <div class="metric-value" style="color: var(--success);">20</div>
+                            <div class="metric-label">Allocated</div>
+                        </div>
+                        <div class="metric-card" style="border-color: var(--warning);">
+                            <div class="metric-value" style="color: var(--warning);">980</div>
+                            <div class="metric-label">Rejected</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">0</div>
+                            <div class="metric-label">Overbooked</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">0</div>
+                            <div class="metric-label">Duplicates</div>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px;">
+                        <div class="card" style="border-top: 4px solid var(--accent);">
+                            <h4 style="margin:0; font-size: 0.9rem;"><i class="fas fa-bolt"></i> Concurrency Testing</h4>
+                            <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 5px;">
+                                Simulating a "Thundering Herd" of <strong>1,000 threads</strong> hitting the DB simultaneously using <code>ExecutorService</code> and <code>CountDownLatch</code>.
+                            </p>
+                        </div>
+                        <div class="card" style="border-top: 4px solid var(--primary);">
+                            <h4 style="margin:0; font-size: 0.9rem;"><i class="fas fa-check-double"></i> Functional Testing</h4>
+                            <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 5px;">
+                                Automated validation of edge cases: <strong>Invalid Slots</strong>, <strong>Already Enrolled</strong>, and <strong>Student Not Found</strong> scenarios.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 25px; text-align: center; color: var(--success); font-weight: 800; font-size: 0.9rem;">
+                        ✓ 100% Data Consistency Verified under Peak Load
+                    </div>
+                </div>
+            </div>
+
+            <!-- 18. Other Key Decisions -->
+            <div class="slide">
+                <h3>Other Key Decisions</h3>
+                <div class="slide-content">
+                    <div class="card-grid" style="grid-template-columns: 1fr;">
+                        <div class="card" style="border-left: 5px solid var(--accent);">
+                            <h4>ddl-auto=validate</h4>
+                            <p style="font-size: 0.85rem;">Refuses to start on schema mismatch — protected shared tables from silent corruption during iterative dev.</p>
+                        </div>
+                        <div class="card" style="border-left: 5px solid var(--accent);">
+                            <h4>termid=78 hardcoded</h4>
+                            <p style="font-size: 0.85rem;">Scopes all queries to the active academic term — prevents stale-term allocations.</p>
+                        </div>
+                        <div class="card" style="border-left: 5px solid var(--accent);">
+                            <h4>HikariCP max 20</h4>
+                            <p style="font-size: 0.85rem;">Caps the connection pool; beyond this, threads queue for connections before even reaching row-lock queue.</p>
+                        </div>
+                    </div>
+                </div>
+                <p class="explanation">These configuration choices ensure system stability and predictable behavior during deployment.</p>
+            </div>
+
+            <!-- 22. Conclusion -->
+            <div class="slide">
+                <h3>Conclusion</h3>
+                <div class="slide-content" style="display: flex; flex-direction: column; justify-content: center; height: 100%;">
+                    <div class="card" style="background: #000; color: #fff; text-align: center; padding: 25px; border: none; font-style: italic; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+                        <p style="font-size: 1.1rem; line-height: 1.6;">
+                            "Elective registration is a test of database integrity, not just application logic. Through pessimistic locking and sorted acquisition, we achieved 100% safety with zero overbookings."
+                        </p>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="card" style="display: flex; align-items: center; gap: 15px; padding: 12px;">
+                            <div style="font-size: 1.5rem; color: var(--success);"><i class="fas fa-shield-check"></i></div>
+                            <div>
+                                <strong style="display: block; font-size: 0.9rem;">Integrity Guaranteed</strong>
+                                <span style="font-size: 0.75rem; color: var(--text-dim);">Overbooking eliminated at the kernel level.</span>
+                            </div>
+                        </div>
+                        <div class="card" style="display: flex; align-items: center; gap: 15px; padding: 12px;">
+                            <div style="font-size: 1.5rem; color: var(--accent);"><i class="fas fa-handshake"></i></div>
+                            <div>
+                                <strong style="display: block; font-size: 0.9rem;">FCFS Fairness</strong>
+                                <span style="font-size: 0.75rem; color: var(--text-dim);">First-come-first-served order strictly enforced.</span>
+                            </div>
+                        </div>
+                        <div class="card" style="display: flex; align-items: center; gap: 15px; padding: 12px;">
+                            <div style="font-size: 1.5rem; color: var(--warning);"><i class="fas fa-lock-open"></i></div>
+                            <div>
+                                <strong style="display: block; font-size: 0.9rem;">Deadlock-Free</strong>
+                                <span style="font-size: 0.75rem; color: var(--text-dim);">Sorted acquisition prevents circular waits.</span>
+                            </div>
+                        </div>
+                        <div class="card" style="display: flex; align-items: center; gap: 15px; padding: 12px;">
+                            <div style="font-size: 1.5rem; color: var(--primary);"><i class="fas fa-microscope"></i></div>
+                            <div>
+                                <strong style="display: block; font-size: 0.9rem;">Empirically Validated</strong>
+                                <span style="font-size: 0.75rem; color: var(--text-dim);">Verified under 1,000-thread peak load.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 20. Thank You -->
+            <div class="slide">
+                <div class="slide-content" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; height: 100%;">
+                    <h1>Thank You</h1>
+                    <p style="font-size: 1.4rem; color: var(--text-dim);">Questions? Discussions? Feedback?</p>
+                    <div style="margin-top: 50px; font-size: 0.9rem; color: var(--text-dim);">
+                        <p style="font-weight: 700; color: var(--primary);">Priyansee Mukeshkumar Soni</p>
+                        <p>ID: 202511011 | M.Tech Minor Project</p>
+                        <p>Dhirubhai Ambani University</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="presentation-footer">
+            <div id="slide-number">1 / 22</div>
+            <div class="progress-bar-container"><div class="progress-bar" id="progress-bar"></div></div>
+            <div class="nav-btns">
+                <button class="btn" id="prev-btn" disabled>Prev</button>
+                <button class="btn" id="next-btn">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const slideNumber = document.getElementById('slide-number');
+        const themeToggle = document.getElementById('theme-toggle');
+        
+        let currentSlide = 0;
+
+        function updateSlide() {
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active', 'prev', 'next');
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                } else if (index < currentSlide) {
+                    slide.classList.add('prev');
+                } else {
+                    slide.classList.add('next');
+                }
+            });
+
+            slideNumber.innerText = `${currentSlide + 1} / ${slides.length}`;
+            progressBar.style.width = `${((currentSlide + 1) / slides.length) * 100}%`;
+            
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === slides.length - 1;
+        }
+
+        prevBtn.addEventListener('click', () => { if (currentSlide > 0) { currentSlide--; updateSlide(); } });
+        nextBtn.addEventListener('click', () => { if (currentSlide < slides.length - 1) { currentSlide++; updateSlide(); } });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') { if (currentSlide < slides.length - 1) { currentSlide++; updateSlide(); } }
+            else if (e.key === 'ArrowLeft') { if (currentSlide > 0) { currentSlide--; updateSlide(); } }
+        });
+
+        themeToggle.addEventListener('click', () => {
+            const theme = document.body.getAttribute('data-theme');
+            if (theme === 'dark') {
+                document.body.removeAttribute('data-theme');
+            } else {
+                document.body.setAttribute('data-theme', 'dark');
+            }
+        });
+
+        updateSlide();
+    </script>
+</body>
+</html>
