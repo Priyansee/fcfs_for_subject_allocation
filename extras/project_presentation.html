@@ -99,48 +99,48 @@
         h1 { font-size: 3rem; font-weight: 800; line-height: 1.1; margin-bottom: 20px; }
         h3 { font-size: 1.8rem; font-weight: 700; margin-bottom: 15px; color: var(--primary); }
 
-        .slide-content { flex-grow: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+        .slide-content { flex-grow: 1; overflow-y: auto; }
 
         .explanation {
-            margin-top: 10px;
-            font-size: 1rem;
+            margin-top: 15px;
+            font-size: 0.95rem;
             color: var(--text-dim);
-            line-height: 1.5;
+            line-height: 1.6;
             border-top: 1px solid var(--border);
-            padding-top: 10px;
+            padding-top: 15px;
         }
 
         /* Visual Components */
-        .card-grid { display: grid; gap: 15px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin: 10px 0; }
-        .card { background: var(--card-bg); border: 1px solid var(--border); padding: 15px; border-radius: 4px; position: relative; }
-        .card h4 { margin-bottom: 5px; font-weight: 700; font-size: 1.1rem; color: var(--primary); }
+        .card-grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin: 20px 0; }
+        .card { background: var(--card-bg); border: 1px solid var(--border); padding: 20px; border-radius: 4px; position: relative; }
+        .card h4 { margin-bottom: 10px; font-weight: 700; font-size: 1.1rem; color: var(--primary); }
 
-        .timeline-container { position: relative; margin: 20px 0; }
-        .transaction-bar { height: 35px; border-radius: 4px; margin-bottom: 8px; position: relative; border: 1px solid var(--border); }
+        .timeline-container { position: relative; margin: 40px 0; }
+        .transaction-bar { height: 40px; border-radius: 4px; margin-bottom: 10px; position: relative; border: 1px solid var(--border); }
         .t1-bar { background: rgba(37, 99, 235, 0.1); border-left: 4px solid var(--accent); }
         .t2-bar { background: rgba(220, 38, 38, 0.1); border-left: 4px solid var(--danger); }
 
-        .arch-diagram { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px 0; }
-        .arch-box { border: 2px solid var(--primary); padding: 10px 25px; width: 320px; text-align: center; font-weight: 700; background: var(--bg); font-size: 1rem; }
-        .arrow-v { height: 25px; width: 2px; background: var(--primary); position: relative; }
+        .arch-diagram { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 20px 0; }
+        .arch-box { border: 2px solid var(--primary); padding: 12px 30px; width: 300px; text-align: center; font-weight: 700; background: var(--bg); }
+        .arrow-v { height: 30px; width: 2px; background: var(--primary); position: relative; }
         .arrow-v::after { content: ''; position: absolute; bottom: -5px; left: -4px; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 8px solid var(--primary); }
 
-        .db-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 10px; }
-        .db-table { border: 1px solid var(--primary); font-size: 0.75rem; }
-        .db-header { background: var(--primary); color: var(--bg); padding: 4px; text-align: center; font-weight: 700; }
-        .db-row { padding: 3px 6px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+        .db-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; margin-top: 20px; }
+        .db-table { border: 1px solid var(--primary); font-size: 0.8rem; }
+        .db-header { background: var(--primary); color: var(--bg); padding: 5px; text-align: center; font-weight: 700; }
+        .db-row { padding: 4px 8px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
         .pk { color: #854d0e; font-weight: 700; }
         .fk { color: var(--accent); }
 
-        .code-block { background: #000; color: #fff; padding: 12px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; margin: 8px 0; overflow: hidden; white-space: pre-wrap; word-break: break-all; }
+        .code-block { background: #000; color: #fff; padding: 15px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; margin: 10px 0; overflow-x: auto; white-space: pre; }
 
-        .phase-step { border: 2px solid var(--primary); padding: 10px; border-radius: 50%; width: 90px; height: 90px; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: 700; font-size: 0.75rem; }
+        .phase-step { border: 2px solid var(--primary); padding: 15px; border-radius: 50%; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: 700; font-size: 0.8rem; }
 
         /* Progress & Controls */
-        .presentation-footer { padding: 10px 40px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .presentation-footer { padding: 15px 40px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
         .progress-bar-container { flex-grow: 1; margin: 0 40px; height: 4px; background: var(--secondary); border-radius: 2px; }
         .progress-bar { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s; }
-        .btn { padding: 6px 15px; border: 1px solid var(--primary); background: transparent; color: var(--primary); cursor: pointer; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px; transition: 0.2s; }
+        .btn { padding: 8px 20px; border: 1px solid var(--primary); background: transparent; color: var(--primary); cursor: pointer; font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; transition: 0.2s; }
         .btn:hover:not(:disabled) { background: var(--primary); color: var(--bg); }
         .btn:disabled { opacity: 0.2; cursor: not-allowed; }
 
@@ -776,6 +776,12 @@ for (TermCourseAvailableFor lockedTca : lockedTcafs) {
                                 <span style="font-size: 0.75rem; color: var(--text-dim);">Verified under 1,000-thread peak load.</span>
                             </div>
                         </div>
+                    </div>
+
+                    <div style="margin-top: 25px; text-align: center; padding: 12px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;">
+                        <i class="fab fa-github" style="font-size: 1.2rem; margin-right: 8px;"></i>
+                        <span style="font-size: 0.85rem; font-weight: 600;">Source Code:</span>
+                        <a href="https://github.com/Priyansee/fcfs_for_subject_allocation" target="_blank" style="font-size: 0.85rem; color: var(--accent); text-decoration: none; margin-left: 5px;">github.com/Priyansee/fcfs_for_subject_allocation</a>
                     </div>
                 </div>
             </div>
