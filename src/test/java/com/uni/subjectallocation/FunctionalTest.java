@@ -61,7 +61,10 @@ public class FunctionalTest {
         placeholders.setLength(placeholders.length() - 1);
         sql.append(") ").append(placeholders).append(")");
 
-        jdbcTemplate.update(sql.toString(), args);
+        String finalSql = sql.toString();
+        if (finalSql != null) {
+            jdbcTemplate.update(finalSql, args);
+        }
 
         // Reset seats for validSlot
         jdbcTemplate.execute("UPDATE ec2.termcourseavailablefor SET tca_seats = 20, tca_booked = 0 " +
