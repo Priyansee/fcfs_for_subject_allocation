@@ -1,100 +1,86 @@
-# Codebase Walkthrough: FCFS Subject Allocation System
+# FCFS Subject Allocation: Codebase Documentation
 
-This document provides a detailed breakdown of the project's structure, the purpose of each file, and the core logic that ensures high-concurrency safety.
+## 1. Project Architecture Overview
+The system is built using a **layered architecture** to ensure separation of concerns and high-concurrency safety.
 
----
-
-## 1. Project Overview & Tech Stack
-This is a **Spring Boot** application designed to handle high-concurrency subject allocation.
-- **Backend:** Java 21, Spring Boot 3.x
-- **Database:** PostgreSQL 16
-- **ORM:** Hibernate 6 (JPA)
-- **Frontend:** Thymeleaf (HTML5)
-- **Concurrency Strategy:** **Pessimistic Row-Level Locking** (`SELECT FOR UPDATE`) with **Global Lock Ordering** (to prevent deadlocks).
-
----
-
-## 2. Directory Structure & Key Files
-
-### **A. Core Domain Logic (Entities)**
-*Location: `src/main/java/com/uni/subjectallocation/entity/`*
-
-These files define the database schema and object relationships.
-
-1.  **`Course.java`**: Represents a base academic course (e.g., "Advanced Java").
-2.  **`TermCourse.java`**: Links a `Course` to a specific **Slot** (e.g., Slot 1) and a **Term**.
-3.  **`TermCourseAvailableFor.java`**: The **Contention Point**. It stores:
-    - `tca_seats`: Maximum capacity.
-    - `tca_booked`: Current enrollment count.
-    - *Logic:* This is the row we lock during registration.
-4.  **`StudentRegistration.java`**: Links a student to a specific term (the "Master" record for a student's semester).
-5.  **`StudentRegistrationCourses.java`**: The final "Transaction" record. If a student is allocated a course, a row is inserted here.
-
----
-
-### **B. Data Access Layer (Repositories)**
-*Location: `src/main/java/com/uni/subjectallocation/repository/`*
-
-These interfaces handle all database communication.
-
-1.  **`TermCourseAvailableForRepository.java`**: 
-    - `findTcafByIdWithLock(Long tcaid)`: Uses `@Lock(LockModeType.PESSIMISTIC_WRITE)`.
-    - *Why?* This forces PostgreSQL to queue every other transaction trying to access the same row until the current one commits.
-2.  **`StudentRegistrationCoursesRepository.java`**: Used to check if a student is already registered (Phase 0 check).
-
----
-
-### **C. The Engine (Service Layer)**
-*Location: `src/main/java/com/uni/subjectallocation/service/`*
-
-1.  **`AllocationService.java`**: The "Heart" of the project. It implements the **3-Phase FCFS Algorithm**.
-
-#### **The 3-Phase Logic in `allocateSlot()`:**
-| Phase | Action | Purpose |
+| Layer | Component | Primary Responsibility |
 | :--- | :--- | :--- |
-| **Phase 0: Discovery** | Fetch IDs and Validate student eligibility. | Quick, wait-free check. If student is already enrolled, we fail early without locking anything. |
-| **Phase 1: Locking** | `Collections.sort(tcaIds)` and then `findTcafByIdWithLock()`. | **Sort IDs** to prevent AB-BA deadlocks. Then, acquire locks to serialize concurrent users. |
-| **Phase 2: Commitment** | Check `seats > booked`, increment `booked`, and insert registration record. | Atomic final check and update. If something fails, the whole transaction rolls back. |
+| **Presentation** | Thymeleaf / HTML5 | Captures student input and displays allocation status. |
+| **Web** | Spring MVC Controllers | Handles request routing and basic input validation. |
+| **Service** | Spring Service (@Service) | **Core Engine:** Implements the 3-Phase FCFS logic. |
+| **Data Access** | Spring Data JPA | Manages persistence and handles **Pessimistic Locking**. |
+| **Database** | PostgreSQL 16 | The source of truth; serializes requests via row locks. |
 
 ---
 
-### **D. Web Layer (Controllers)**
-*Location: `src/main/java/com/uni/subjectallocation/controller/`*
+## 2. File Inventory & Responsibilities
 
-1.  **`RegistrationController.java`**: 
-    - Handles GET requests to show the slot selection page.
-    - Handles POST requests to `/register`. It captures the `studentId` and `slot` and passes them to the `AllocationService`.
+### **A. Domain Entities (`com.uni.subjectallocation.entity`)**
+| File | Role | Key Fields / Data |
+| :--- | :--- | :--- |
+| `Course.java` | Subject definition | `crsid`, `crsname` |
+| `TermCourse.java` | Slot Mapping | `tcrid`, `tcrslot`, `tcrcrsid` |
+| `TermCourseAvailableFor.java` | **Lock Target** | `tcaid`, `tca_seats`, `tca_booked` |
+| `StudentRegistration.java` | Student Master | `srgid`, `srgstdid` |
+| `StudentRegistrationCourses.java` | Enrollment Map | `srcid`, `srctcrid`, `srcsrgid` |
 
----
+### **B. Service & Business Logic (`com.uni.subjectallocation.service`)**
+| File | Method | logic |
+| :--- | :--- | :--- |
+| `AllocationService.java` | `allocateSlot()` | Implements FCFS using sorted pessimistic locking. |
 
-## 3. High-Concurrency Testing
-*Location: `src/test/java/com/uni/subjectallocation/`*
-
-1.  **`ConcurrencyTest.java`**: 
-    - Uses `ExecutorService` to spawn **1,000 parallel threads**.
-    - Uses `CountDownLatch` to make them all hit the database at the exact same moment.
-    - *Goal:* Verify that if 20 seats are available, exactly 20 students succeed and 980 fail (No Overbooking).
-2.  **`FunctionalTest.java`**:
-    - Verifies business rules (e.g., "Can a student register twice?", "What if the slot ID is wrong?").
-
----
-
-## 4. Key Configurations
-*Location: `src/main/resources/`*
-
-1.  **`application.properties`**:
-    - `spring.datasource.*`: Database connection details.
-    - `spring.jpa.hibernate.ddl-auto=validate`: Ensures the app only runs if the DB schema matches the code perfectly.
-    - `hikari.maximum-pool-size=20`: Limits the DB connection pool to prevent overloading PostgreSQL.
+### **C. Controllers & Routing (`com.uni.subjectallocation.controller`)**
+| File | Route | Description |
+| :--- | :--- | :--- |
+| `RegistrationController.java` | `/register` | Captures student ID and slot; triggers allocation. |
 
 ---
 
-## 5. Sequence of a Single Registration
-1. **User** clicks "Register" in `slot-selection.html`.
-2. **Controller** receives the POST request.
-3. **Service** starts a `@Transactional` session.
-4. **Service** finds which courses are in that slot.
-5. **Service** sorts those course IDs and locks the rows in the DB.
-6. **Service** checks seat availability while holding the locks.
-7. **Service** updates the seat count and saves the student mapping.
-8. **Transaction Commits**: Locks are released, and the user sees "Success".
+## 3. The 3-Phase FCFS Algorithm Logic
+
+The `AllocationService` enforces FCFS through three distinct phases within a single `@Transactional` boundary.
+
+### **Phase 0: Wait-Free Validation**
+- **Action:** Fetch all `tcaid`s for the requested slot.
+- **Action:** Check if the student exists and is not already enrolled.
+- **Benefit:** Fails early without consuming database locks.
+
+### **Phase 1: Deterministic Locking**
+- **Action:** Sort all target `tcaid`s numerically.
+- **Action:** Execute `SELECT ... FOR NO KEY UPDATE` for each ID.
+- **Benefit:** Prevents deadlocks (sorted order) and serializes users (FIFO).
+
+### **Phase 2: Atomic Commitment**
+- **Action:** Final capacity verification (`seats > booked`).
+- **Action:** Increment booked count and save the mapping record.
+- **Benefit:** Guaranteed atomicity; if one subject is full, the whole slot allocation is rolled back.
+
+---
+
+## 4. Database Schema Details (`ec2` schema)
+
+| Table Name | Primary Key | Foreign Key | Critical Column |
+| :--- | :--- | :--- | :--- |
+| `courses` | `crsid` | - | `crsname` |
+| `termcourses` | `tcrid` | `tcrcrsid` | `tcrslot` |
+| `termcourseavailablefor` | `tcaid` | `tcatcrid` | `tca_booked` |
+| `studentregistrations` | `srgid` | - | `srgstdid` |
+| `studentregistrationcourses` | `srcid` | `srctcrid` | - |
+
+---
+
+## 5. System Configuration (`application.properties`)
+
+| Property | Value | Rationale |
+| :--- | :--- | :--- |
+| `hibernate.ddl-auto` | `validate` | Prevents runtime schema corruption. |
+| `hikari.maximum-pool-size`| `20` | Optimizes DB connection pressure under load. |
+| `hibernate.dialect` | `PostgreSQLDialect` | Enables PostgreSQL-specific locking syntax. |
+
+---
+
+## 6. Execution & Testing
+To run the system locally:
+1. Ensure PostgreSQL is active.
+2. Run `.\mvnw spring-boot:run`.
+3. Verify concurrency using `ConcurrencyTest.java` (simulates 1,000 threads).
