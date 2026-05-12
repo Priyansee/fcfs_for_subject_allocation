@@ -24,18 +24,19 @@ public class ConcurrencyTest {
     @BeforeEach
     public void setup() {
         System.out.println("Preparing test data with JdbcTemplate...");
-        
-        // 1. Get a template student to copy mandatory columns like srgstrid, srgcurid, etc.
+
+        // 1. Get a template student to copy mandatory columns like srgstrid, srgcurid,
+        // etc.
         var templates = jdbcTemplate.queryForList("SELECT * FROM ec2.studentregistrations LIMIT 1");
         if (templates.isEmpty()) {
             throw new RuntimeException("No template student found in ec2.studentregistrations to clone from!");
         }
         var template = templates.get(0);
-        
+
         // 2. Cleanup Slot 1 and test students
         jdbcTemplate.execute("DELETE FROM ec2.studentregistrationcourses WHERE srcsrgid BETWEEN 20000 AND 21000");
         jdbcTemplate.execute("DELETE FROM ec2.studentregistrations WHERE srgid BETWEEN 20000 AND 21000");
-        
+
         // 3. Insert 1000 students using the template for missing columns
         for (int i = 0; i < 1000; i++) {
             long id = 20000 + i;
@@ -61,51 +62,58 @@ public class ConcurrencyTest {
             placeholders.setLength(placeholders.length() - 1);
             sql.append(") ").append(placeholders).append(")");
 
-            jdbcTemplate.update(sql.toString(), args);
+            String finalSql = sql.toString();
+            if (finalSql != null) {
+                jdbcTemplate.update(finalSql, args);
+            }
         }
-        
+
         // Reset booked count and ensure seats are available for Slot 1
         jdbcTemplate.execute("UPDATE ec2.termcourseavailablefor SET tca_seats = 20, tca_booked = 0 " +
-                             "WHERE tcatcrid IN (SELECT tcrid FROM ec2.termcourses WHERE tcrslot = '1')");
+                "WHERE tcatcrid IN (SELECT tcrid FROM ec2.termcourses WHERE tcrslot = '1')");
 
         // DEBUG: Print the seats for slot 1
         jdbcTemplate.query("SELECT tcaid, tca_seats, tca_booked FROM ec2.termcourseavailablefor " +
-                           "WHERE tcatcrid IN (SELECT tcrid FROM ec2.termcourses WHERE tcrslot = '1')", 
-            rs -> {
-                System.out.println("DEBUG SLOT 1 -> tcaid: " + rs.getLong("tcaid") + 
-                                   ", seats: " + rs.getInt("tca_seats") + 
-                                   ", booked: " + rs.getInt("tca_booked"));
-            });
+                "WHERE tcatcrid IN (SELECT tcrid FROM ec2.termcourses WHERE tcrslot = '1')",
+                rs -> {
+                    System.out.println("DEBUG SLOT 1 -> tcaid: " + rs.getLong("tcaid") +
+                            ", seats: " + rs.getInt("tca_seats") +
+                            ", booked: " + rs.getInt("tca_booked"));
+                });
 
         System.out.println("Data ready.");
     }
 
     @Test
     public void testConcurrentAllocation() throws InterruptedException {
-        int[] threadCounts = {100, 200, 500, 1000};
-        
+        int[] threadCounts = { 100, 200, 500, 1000 };
+
         System.out.println("=== STARTING CONCURRENCY BENCHMARK ===");
         System.out.println("ConcurrencyLevel,Successful,Rejected");
-        
+
         for (int threadCount : threadCounts) {
             // Reset DB state for this iteration
             jdbcTemplate.execute("UPDATE ec2.termcourseavailablefor SET tca_seats = 20, tca_booked = 0 " +
-                                 "WHERE tcatcrid IN (SELECT tcrid FROM ec2.termcourses WHERE tcrslot = '1')");
-            jdbcTemplate.execute("UPDATE ec2.studentregistrationcourses SET srcstatus = 'REJECTED' WHERE srcsrgid BETWEEN 20000 AND 21000"); // cleanup previous run allocations
-            
+                    "WHERE tcatcrid IN (SELECT tcrid FROM ec2.termcourses WHERE tcrslot = '1')");
+            jdbcTemplate.execute(
+                    "UPDATE ec2.studentregistrationcourses SET srcstatus = 'REJECTED' WHERE srcsrgid BETWEEN 20000 AND 21000"); // cleanup
+                                                                                                                                // previous
+                                                                                                                                // run
+                                                                                                                                // allocations
+
             ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
             CountDownLatch latch = new CountDownLatch(1);
             AtomicInteger successCount = new AtomicInteger(0);
             AtomicInteger failureCount = new AtomicInteger(0);
 
-            String slot = "1"; 
+            String slot = "1";
             Long startStudentId = 20000L;
 
             for (int i = 0; i < threadCount; i++) {
                 Long studentId = startStudentId + i;
                 executorService.execute(() -> {
                     try {
-                        latch.await(); 
+                        latch.await();
                         String result = allocationService.allocateSlot(studentId, slot);
                         if (result.contains("Successful")) {
                             successCount.incrementAndGet();
@@ -118,7 +126,7 @@ public class ConcurrencyTest {
                 });
             }
 
-            latch.countDown(); 
+            latch.countDown();
             executorService.shutdown();
             while (!executorService.isTerminated()) {
                 Thread.sleep(100);
