@@ -786,7 +786,70 @@ for (TermCourseAvailableFor lockedTca : lockedTcafs) {
                 </div>
             </div>
 
-            <!-- 20. Thank You -->
+            <!-- References -->
+            <div class="slide">
+                <h3>References</h3>
+                <div class="slide-content" style="overflow-y: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.7rem; line-height: 1.5;">
+                        <thead>
+                            <tr style="background: var(--primary); color: var(--bg); text-align: left;">
+                                <th style="padding: 8px; width: 5%;">#</th>
+                                <th style="padding: 8px; width: 60%;">Reference</th>
+                                <th style="padding: 8px; width: 35%;">Used For</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid var(--border);">
+                                <td style="padding: 6px 8px;">[1]</td>
+                                <td style="padding: 6px 8px;">A. Chiu, B. Kao, and K. Lam, "An analysis of lock-based and optimistic concurrency control protocols…," <em>J. Syst. Softw.</em>, 1998.</td>
+                                <td style="padding: 6px 8px;">Pessimistic vs Optimistic Locking comparison; Barging & Fairness analysis</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border); background: var(--card-bg);">
+                                <td style="padding: 6px 8px;">[2]</td>
+                                <td style="padding: 6px 8px;">Hibernate Project, "Documentation 7.3 Hibernate ORM," 2026.</td>
+                                <td style="padding: 6px 8px;">JPA <code>@Lock</code> annotation, <code>PESSIMISTIC_WRITE</code> mode, L1 cache behavior</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border);">
+                                <td style="padding: 6px 8px;">[3]</td>
+                                <td style="padding: 6px 8px;">I. Roztropiński, "Optimistic vs Pessimistic Locking: concurrency control, conflicts, lost updates…," 2025.</td>
+                                <td style="padding: 6px 8px;">Lost Update problem definition; Race Condition slide justification</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border); background: var(--card-bg);">
+                                <td style="padding: 6px 8px;">[4]</td>
+                                <td style="padding: 6px 8px;">PostgreSQL Global Dev. Group, "PostgreSQL 18 Docs: 13.3 Explicit Locking," 2026.</td>
+                                <td style="padding: 6px 8px;"><code>SELECT FOR NO KEY UPDATE</code> syntax; Row-Level Lock semantics</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border);">
+                                <td style="padding: 6px 8px;">[5]</td>
+                                <td style="padding: 6px 8px;">PostgreSQL Global Dev. Group, "PostgreSQL 18 Docs: Deadlocks," 2026.</td>
+                                <td style="padding: 6px 8px;">Deadlock Prevention slide; Global Lock Ordering strategy</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border); background: var(--card-bg);">
+                                <td style="padding: 6px 8px;">[6]</td>
+                                <td style="padding: 6px 8px;">Broadcom Inc., "Spring Framework Docs: Transaction Management," 2026.</td>
+                                <td style="padding: 6px 8px;"><code>@Transactional</code> boundary; Atomic rollback on exception</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border);">
+                                <td style="padding: 6px 8px;">[7]</td>
+                                <td style="padding: 6px 8px;">K. P. Eswaran et al., "The notions of consistency and predicate locks…," <em>Commun. ACM</em>, 1976.</td>
+                                <td style="padding: 6px 8px;">Two-Phase Locking (2PL) theory; Growing & Shrinking phase model</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border); background: var(--card-bg);">
+                                <td style="padding: 6px 8px;">[8]</td>
+                                <td style="padding: 6px 8px;">D. Martinenghi, "Towards a visually interpretable analysis of Two-Phase Locking membership," <em>arXiv</em>, 2025.</td>
+                                <td style="padding: 6px 8px;">2PL membership verification; Algorithm correctness proof</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 8px;">[9]</td>
+                                <td style="padding: 6px 8px;">W. H. Hesselink et al., "First-Come-First-Served as a Separate Principle," <em>ACM Trans. Parallel Comput.</em>, 2024.</td>
+                                <td style="padding: 6px 8px;">FCFS fairness formalization; Wait-Free Doorway concept</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Thank You -->
             <div class="slide">
                 <div class="slide-content" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; height: 100%;">
                     <h1>Thank You</h1>
